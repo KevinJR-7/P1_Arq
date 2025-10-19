@@ -1,4 +1,4 @@
-git push -u origin main
+
 # P1_Arq — Advanced Computer Architecture
 
 This repository contains the coursework for the Advanced Computer Architecture class. The project focuses on performing and analyzing different simulations using gem5.
