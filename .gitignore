@@ -1,2 +1,6 @@
+<<<<<<< HEAD
 profiling/results
 *.pgm
+=======
+results/
+>>>>>>> def84af (chore: ignore results/ (profiling outputs))
