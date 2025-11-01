@@ -56,36 +56,49 @@ def build_plots(df: pd.DataFrame, out_path: Path, show: bool = False):
 	df_miss = df[miss_cols].apply(pd.to_numeric, errors="coerce").fillna(0) if miss_cols else None
 	df_hit = df[hit_cols].apply(pd.to_numeric, errors="coerce").fillna(0) if hit_cols else None
 
-	fig, axes = plt.subplots(ncols=2, figsize=(14, 6), sharey=True)
-
-	if df_miss is not None:
-		df_miss.plot(kind="bar", ax=axes[0], width=0.8)
-		axes[0].set_title("Cache miss % by level")
-		axes[0].set_ylabel("Percent")
-		axes[0].legend(title="Level", bbox_to_anchor=(1.05, 1), loc="upper left")
-	else:
-		axes[0].text(0.5, 0.5, "No miss% columns", ha="center", va="center")
-		axes[0].set_axis_off()
-
-	if df_hit is not None:
-		df_hit.plot(kind="bar", ax=axes[1], width=0.8)
-		axes[1].set_title("Cache hit % by level")
-		axes[1].legend(title="Level", bbox_to_anchor=(1.05, 1), loc="upper left")
-	else:
-		axes[1].text(0.5, 0.5, "No hit% columns", ha="center", va="center")
-		axes[1].set_axis_off()
-
-	for ax in axes:
-		ax.set_xlabel("")
-		ax.set_xticklabels(ax.get_xticklabels(), rotation=30, ha="right")
-		ax.set_ylim(0, 100)
-
-	plt.tight_layout()
+	# Create and save percentage plots separately (one PNG per subplot)
 	out_path.parent.mkdir(parents=True, exist_ok=True)
-	fig.savefig(out_path, dpi=200)
-	print(f"Saved plot to: {out_path}")
-	if show:
-		plt.show()
+	base = out_path.stem
+	parent = out_path.parent
+
+	# Miss percentage plot
+	if df_miss is not None:
+		fig_miss, ax_miss = plt.subplots(figsize=(8, 6))
+		df_miss.plot(kind="bar", ax=ax_miss, width=0.8)
+		ax_miss.set_title("Cache miss % by level")
+		ax_miss.set_ylabel("Percent")
+		ax_miss.legend(title="Level", bbox_to_anchor=(1.05, 1), loc="upper left")
+		ax_miss.set_xlabel("")
+		ax_miss.set_xticklabels(ax_miss.get_xticklabels(), rotation=30, ha="right")
+		ax_miss.set_ylim(0, 100)
+		miss_pct_out = parent / (base + "_miss_pct" + out_path.suffix)
+		fig_miss.tight_layout()
+		fig_miss.savefig(miss_pct_out, dpi=200)
+		plt.close(fig_miss)
+		print(f"Saved plot to: {miss_pct_out}")
+		if show:
+			plt.show()
+	else:
+		print("No miss% columns to plot")
+
+	# Hit percentage plot
+	if df_hit is not None:
+		fig_hit, ax_hit = plt.subplots(figsize=(8, 6))
+		df_hit.plot(kind="bar", ax=ax_hit, width=0.8)
+		ax_hit.set_title("Cache hit % by level")
+		ax_hit.legend(title="Level", bbox_to_anchor=(1.05, 1), loc="upper left")
+		ax_hit.set_xlabel("")
+		ax_hit.set_xticklabels(ax_hit.get_xticklabels(), rotation=30, ha="right")
+		ax_hit.set_ylim(0, 100)
+		hit_pct_out = parent / (base + "_hit_pct" + out_path.suffix)
+		fig_hit.tight_layout()
+		fig_hit.savefig(hit_pct_out, dpi=200)
+		plt.close(fig_hit)
+		print(f"Saved plot to: {hit_pct_out}")
+		if show:
+			plt.show()
+	else:
+		print("No hit% columns to plot")
 
 	# --- Additional output: per-level counts (misses and hits) ---
 	# Determine available count columns
@@ -112,42 +125,51 @@ def build_plots(df: pd.DataFrame, out_path: Path, show: bool = False):
 		# build hits dataframe if we found any
 		df_hit_counts = pd.DataFrame(hits_data, index=df.index) if hits_data else None
 
-		# plot counts: left = misses by level, right = hits by level
-		# Do not share y-axis so each subplot can autoscale independently
-		fig_counts, axes_counts = plt.subplots(ncols=2, figsize=(14, 6), sharey=False)
-
+		# Plot and save per-level misses and hits as separate PNGs
+		# Miss counts
 		if not df_miss_counts.empty:
-			df_miss_counts.plot(kind="bar", ax=axes_counts[0], width=0.8)
-			axes_counts[0].set_title("Cache misses (counts) by level")
-			axes_counts[0].set_ylabel("Count")
-			axes_counts[0].legend(title="Level", bbox_to_anchor=(1.05, 1), loc="upper left")
-		else:
-			axes_counts[0].text(0.5, 0.5, "No miss count columns", ha="center", va="center")
-			axes_counts[0].set_axis_off()
-
-		if df_hit_counts is not None and not df_hit_counts.empty:
-			df_hit_counts.plot(kind="bar", ax=axes_counts[1], width=0.8)
-			axes_counts[1].set_title("Cache hits (counts) by level")
-			axes_counts[1].legend(title="Level", bbox_to_anchor=(1.05, 1), loc="upper left")
-		else:
-			axes_counts[1].text(0.5, 0.5, "No hit count columns", ha="center", va="center")
-			axes_counts[1].set_axis_off()
-
-		for ax in axes_counts:
-			ax.set_xlabel("")
-			ax.set_xticklabels(ax.get_xticklabels(), rotation=30, ha="right")
-			# Ensure y-axis starts at zero so counts are easy to compare visually
+			fig_mc, ax_mc = plt.subplots(figsize=(8, 6))
+			df_miss_counts.plot(kind="bar", ax=ax_mc, width=0.8)
+			ax_mc.set_title("Cache misses (counts) by level")
+			ax_mc.set_ylabel("Count")
+			ax_mc.legend(title="Level", bbox_to_anchor=(1.05, 1), loc="upper left")
+			ax_mc.set_xlabel("")
+			ax_mc.set_xticklabels(ax_mc.get_xticklabels(), rotation=30, ha="right")
 			try:
-				ax.set_ylim(bottom=0)
+				ax_mc.set_ylim(bottom=0)
 			except Exception:
 				pass
+			miss_counts_out = parent / (base + "_miss_counts" + out_path.suffix)
+			fig_mc.tight_layout()
+			fig_mc.savefig(miss_counts_out, dpi=200)
+			plt.close(fig_mc)
+			print(f"Saved counts plot to: {miss_counts_out}")
+			if show:
+				plt.show()
+		else:
+			print("No miss count columns to plot")
 
-		plt.tight_layout()
-		counts_out = out_path.with_name(out_path.stem + "_counts" + out_path.suffix)
-		fig_counts.savefig(counts_out, dpi=200)
-		print(f"Saved counts plot to: {counts_out}")
-		if show:
-			plt.show()
+		# Hit counts
+		if df_hit_counts is not None and not df_hit_counts.empty:
+			fig_hc, ax_hc = plt.subplots(figsize=(8, 6))
+			df_hit_counts.plot(kind="bar", ax=ax_hc, width=0.8)
+			ax_hc.set_title("Cache hits (counts) by level")
+			ax_hc.legend(title="Level", bbox_to_anchor=(1.05, 1), loc="upper left")
+			ax_hc.set_xlabel("")
+			ax_hc.set_xticklabels(ax_hc.get_xticklabels(), rotation=30, ha="right")
+			try:
+				ax_hc.set_ylim(bottom=0)
+			except Exception:
+				pass
+			hit_counts_out = parent / (base + "_hit_counts" + out_path.suffix)
+			fig_hc.tight_layout()
+			fig_hc.savefig(hit_counts_out, dpi=200)
+			plt.close(fig_hc)
+			print(f"Saved counts plot to: {hit_counts_out}")
+			if show:
+				plt.show()
+		else:
+			print("No hit count columns to plot")
 
 
 def main(argv=None):

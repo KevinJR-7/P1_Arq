@@ -107,6 +107,45 @@ def build_plots(df: pd.DataFrame, out_path: Path, show: bool = False):
 	if show:
 		plt.show()
 
+	# Also save each subplot as a separate PNG: instruction percentages and FU percentages
+	base = out_path.stem
+	parent = out_path.parent
+
+	# Instruction percentage plot
+	if not df_instr.empty:
+		fig_i, ax_i = plt.subplots(figsize=(8, 6))
+		df_instr.plot(kind="bar", stacked=True, ax=ax_i, colormap="tab20", width=0.8)
+		ax_i.set_title("Instruction mix (%)")
+		ax_i.set_ylabel("Percent")
+		ax_i.legend(title="Instr", bbox_to_anchor=(1.05, 1), loc="upper left")
+		ax_i.set_xlabel("")
+		ax_i.set_xticklabels(ax_i.get_xticklabels(), rotation=30, ha="right")
+		ax_i.set_ylim(0, 100)
+		instr_out = parent / (base + "_instr_pct" + out_path.suffix)
+		fig_i.tight_layout()
+		fig_i.savefig(instr_out, dpi=200)
+		plt.close(fig_i)
+		print(f"Saved plot to: {instr_out}")
+		if show:
+			plt.show()
+
+	# FU percentage plot
+	if not df_fu.empty:
+		fig_f, ax_f = plt.subplots(figsize=(8, 6))
+		df_fu.plot(kind="bar", stacked=True, ax=ax_f, colormap="tab20", width=0.8)
+		ax_f.set_title("Functional unit busy (%)")
+		ax_f.legend(title="FU", bbox_to_anchor=(1.05, 1), loc="upper left")
+		ax_f.set_xlabel("")
+		ax_f.set_xticklabels(ax_f.get_xticklabels(), rotation=30, ha="right")
+		ax_f.set_ylim(0, 100)
+		fu_out = parent / (base + "_fu_pct" + out_path.suffix)
+		fig_f.tight_layout()
+		fig_f.savefig(fu_out, dpi=200)
+		plt.close(fig_f)
+		print(f"Saved plot to: {fu_out}")
+		if show:
+			plt.show()
+
 
 def main(argv=None):
 	parser = argparse.ArgumentParser(description="Plot instruction and FU percentage profiles")
